@@ -26,62 +26,51 @@ SPOTIFY_API_URL = "{}/{}".format(SPOTIFY_API_BASE_URL, API_VERSION)
 
 
 def get_token():
-    client_token = base64.b64encode("{}:{}".format(CLIENT_ID, CLIENT_SECRET)
-                                    .encode('UTF-8')).decode('ascii')
-
+    client_token = base64.b64encode("{}:{}".format(CLIENT_ID, CLIENT_SECRET).encode('UTF-8')).decode('ascii')
     headers = {"Authorization": "Basic {}".format(client_token)}
-    payload = {
-        "grant_type": "client_credentials"
-    }
-    token_request = requests.post(
-        SPOTIFY_TOKEN_URL, data=payload, headers=headers)
+    payload = {"grant_type": "client_credentials"}
+    token_request = requests.post(SPOTIFY_TOKEN_URL, data=payload, headers=headers)
     access_token = json.loads(token_request.text)["access_token"]
     return access_token
 
 
 def request_valid_song(access_token, genre=None):
+
     # Wildcards for random search
-    randomSongsArray = ['%25a%25', 'a%25', '%25a',
+    random_wildcards = ['%25a%25', 'a%25', '%25a',
                         '%25e%25', 'e%25', '%25e',
                         '%25i%25', 'i%25', '%25i',
                         '%25o%25', 'o%25', '%25o',
                         '%25u%25', 'u%25', '%25u']
-    randomSongs = random.choice(randomSongsArray)
-    # Genre filter definition
-    if genre:
-        genreSearchString = " genre:'{}'".format(genre)
-    else:
-        genreSearchString = ""
-    # Upper limit for random search
-    maxLimit = 10000
-    while True:
+    wildcard = random.choice(random_wildcards)
+    
+    # Make a request for the Search API with pattern and random index
+    authorization_header = {"Authorization": "Bearer {}".format(access_token)}
+    
+    # Cap the max number of requests until getting RICK ASTLEYED
+    song = None
+    for i in range(51):
         try:
-            randomOffset = random.randint(1, maxLimit)
-            authorization_header = {
-                "Authorization": "Bearer {}".format(access_token)
-            }
             song_request = requests.get(
-                "{}/search?query={}&offset={}&limit=1&type=track".format(
+                '{}/search?q={}{}&type=track&offset={}'.format(
                     SPOTIFY_API_URL,
-                    randomSongs + genreSearchString,
-                    randomOffset
+                    wildcard,
+                    "%20genre:%22{}%22".format(genre.replace(" ", "%20")),
+                    random.randint(0, 200)
                 ),
-                headers=authorization_header
+                headers = authorization_header
             )
-            song_info = json.loads(song_request.text)['tracks']['items'][0]
+            song_info = random.choice(json.loads(song_request.text)['tracks']['items'])
             artist = song_info['artists'][0]['name']
             song = song_info['name']
+            break
         except IndexError:
-            if maxLimit > 1000:
-                maxLimit = maxLimit - 1000
-            elif maxLimit <= 1000 and maxLimit > 0:
-                maxLimit = maxLimit - 10
-            else:
-                artist = "Rick Astley"
-                song = "Never gonna give you up"
-                break
             continue
-        break
+        
+    if song is None:
+        artist = "Rick Astley"
+        song = "Never Gonna Give You Up"
+        
     return "{} - {}".format(artist, song)
 
 
