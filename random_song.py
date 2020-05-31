@@ -5,14 +5,16 @@ or not on a given exiting Spotify genre (look at genres.json, filled with info
 scrapped from http://everynoise.com/everynoise1d.cgi?scope=all&vector=popularity)
 Spotify Ref: https://developer.spotify.com/documentation/web-api/reference-beta/#category-search
 """
-
-import sys
+import base64
 import json
+import random
 import re
 import requests
-import base64
+import sys
 import urllib
-import random
+
+from fuzzysearch import find_near_matches
+
 
 # Client Keys
 CLIENT_ID = "YOUR CLIENT ID"
@@ -78,28 +80,36 @@ def main():
     args = sys.argv[1:]
     n_args = len(args)
 
-    if n_args > 1:
-        print('usage: py ./random_song.py [genre]')
+    # Get a Spotify API token
+    access_token = get_token()
+    
+    # Open genres file
+    try:
+        with open('genres.json', 'r') as infile:
+            valid_genres = json.load(infile)
+    except FileNotFoundError:
+        print("Couldn't find genres file!")
         sys.exit(1)
+
+    # Parse input or pick a random genre
+    if n_args == 0:
+        selected_genre = random.choice(valid_genres)
     else:
-        access_token = get_token()
-        if n_args == 0:
-            result = request_valid_song(access_token)
-        else:
-            selected_genre = (re.sub('[^a-zA-Z0-9]', '', args[0])).lower()
-            try:
-                with open('genres.json', 'r') as infile:
-                    valid_genres = json.load(infile)
-            except FileNotFoundError:
-                print("Couldn't find genres file!")
-                sys.exit(1)
-
-            if selected_genre in valid_genres:
-                result = request_valid_song(access_token, genre=selected_genre)
-            else:
-                result = request_valid_song(access_token)
-
+        selected_genre = (" ".join(args)).lower()
+    
+    # Call the API for a song that matches the criteria
+    if selected_genre in valid_genres:
+        result = request_valid_song(access_token, genre=selected_genre)
         print(result)
+    else:
+        # If genre not found as it is, try fuzzy search with Levenhstein distance 2
+        valid_genres_to_text = " ".join(valid_genres)
+        try:
+            closest_genre = find_near_matches(selected_genre, valid_genres_to_text,  max_l_dist=2)[0].matched
+            result = request_valid_song(access_token, genre=closest_genre)
+            print(result)
+        except IndexError:
+            print("Genre not found")
 
 
 if __name__ == '__main__':

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-
-import sys
-import re
-from bs4 import BeautifulSoup
 import json
+import re
+import sys
+
+from bs4 import BeautifulSoup
 
 
 def parse_genres_html(file):

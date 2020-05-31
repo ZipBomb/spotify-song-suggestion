@@ -1,0 +1,2 @@
+requests==2.23.0
+fuzzysearch==0.7.2
