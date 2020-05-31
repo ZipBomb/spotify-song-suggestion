@@ -3,6 +3,7 @@
 Module that makes use of the Spotify Web API to retrieve pseudo-random songs based
 or not on a given exiting Spotify genre (look at genres.json, filled with info
 scrapped from http://everynoise.com/everynoise1d.cgi?scope=all&vector=popularity)
+Spotify Ref: https://developer.spotify.com/documentation/web-api/reference-beta/#category-search
 """
 
 import sys
@@ -97,9 +98,6 @@ def main():
             result = request_valid_song(access_token)
         else:
             selected_genre = (re.sub('[^a-zA-Z0-9]', '', args[0])).lower()
-            # Fix for 'Trap' genre based on some suggestions
-            if (selected_genre == 'trap'):
-                selected_genre = 'traplatino'
             try:
                 with open('genres.json', 'r') as infile:
                     valid_genres = json.load(infile)

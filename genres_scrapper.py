@@ -16,12 +16,12 @@ def parse_genres_html(file):
     tags = soup.findAll('tr')
 
     # For string normalization
-    regex = re.compile('[^a-z0-9]')
+    regex = re.compile('[^a-z0-9&]')
 
     genres = []
     for tag in tags:
         genre = tag.contents[2].string
-        genres.append(re.sub(regex, "", genre))
+        genres.append(re.sub(regex, " ", genre).replace("&", " and "))
 
     return genres
 
